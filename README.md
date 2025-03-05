@@ -1,47 +1,117 @@
 # Cosmic Monads
 
-A blockchain-integrated space shooter game running on the Monad network. Created with love for Monad G's by theantideather.
+A blockchain-integrated space shooter game built on the Monad network.
 
-## About
+![Cosmic Monads Game](https://cosmicmonads.netlify.app/screenshot.png)
 
-Cosmic Monads is an engaging space shooter game where players control a rocket, dodge asteroids, and attempt to destroy a mothership. Every game action (moving the rocket, firing missiles, destroying asteroids, and hitting the mothership) is logged as a transaction on the Monad blockchain.
+## Play Now
+
+Play the game at [https://cosmicmonads.netlify.app](https://cosmicmonads.netlify.app)
+
+## Overview
+
+Cosmic Monads is a space shooter game that integrates with the Monad blockchain. Every action in the game (movement, shooting, etc.) is logged to the blockchain, creating a permanent record of your gameplay.
 
 ## Features
 
-- Beautiful 3D space environment created with Three.js
-- Real-time blockchain transaction logging on the Monad Testnet
-- Twitter integration for sharing scores
-- Visual transaction notifications
+- Fast-paced space shooter gameplay
+- Real-time blockchain integration
+- Permanent record of game actions on Monad testnet
+- Beautiful cosmic visuals and effects
 
 ## Local Development
 
-To run the game locally:
+### Prerequisites
 
-1. Clone this repository
-2. Install dependencies with `npm install`
-3. Start the API server with `node server.js`
-4. In a separate terminal, serve the frontend with `npx serve`
-5. Access the game at `http://localhost:3000`
+- Node.js (v14 or higher)
+- A Monad testnet wallet with some test MONAD tokens
 
-## Deploying to Netlify
+### Setup
 
-This repository is set up for easy deployment to Netlify:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/theantideather/cosmic-monads.git
+   cd cosmic-monads
+   ```
 
-1. Fork or clone this repository
-2. Create a new site in Netlify and connect to your repository
-3. Set the following environment variables in Netlify:
-   - `CONTRACT_ADDRESS`: Your deployed contract address
-   - `WALLET_ADDRESS`: Your wallet address
-4. Deploy!
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Technologies Used
+3. Create a `.env` file with your configuration:
+   ```
+   # Your private key (without 0x prefix)
+   PRIVATE_KEY=your_private_key_here
+   
+   # Monad Testnet RPC URL
+   MONAD_TESTNET_RPC=https://testnet-rpc.monad.xyz/
+   
+   # Contract address on Monad Testnet
+   CONTRACT_ADDRESS=0x37Ea645D9CA096ecAAbf23c9Ed1b589f68198957
+   
+   # Server Configuration
+   THROTTLE_INTERVAL=5000
+   MAX_TX_PER_MINUTE=10
+   WALLET_ADDRESS=your_wallet_address_here
+   ```
 
-- Three.js for 3D graphics
-- Web3.js for blockchain integration
-- Monad Testnet for blockchain functionality
-- Express.js for the API server
-- Netlify for deployment
+4. Start the server:
+   ```bash
+   npm start
+   ```
 
-## Credits
+5. Open your browser and navigate to `http://localhost:3001`
 
-Created by [@omg14doteth](https://x.com/omg14doteth?s=21) - Follow on [Telegram](https://t.me/theantideather) 
+### Running in Mock Mode
+
+If you don't have a Monad wallet or just want to test the game without blockchain integration:
+
+1. Remove the `CONTRACT_ADDRESS` from your `.env` file
+2. Start the server as usual
+
+The game will run in mock mode, logging actions to the console instead of the blockchain.
+
+## Production Deployment
+
+For production deployment, we recommend:
+
+1. Frontend: Deploy to Netlify (already set up at cosmicmonads.netlify.app)
+2. Backend: Set up a dedicated server for blockchain transactions
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions on setting up a secure production backend.
+
+## Architecture
+
+The project consists of:
+
+- `server.js`: Express server that handles blockchain interactions
+- `blockchain.js`: Frontend JavaScript for managing blockchain connections
+- `game.js`: The main game logic using Three.js
+- `index.html`: Main game page
+
+## Smart Contract
+
+The game uses a simple smart contract deployed on Monad testnet:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract GameActionLogger {
+    event ActionLogged(address indexed player, string action, uint256 timestamp);
+    
+    function logAction(string memory action) public {
+        emit ActionLogged(msg.sender, action, block.timestamp);
+    }
+}
+```
+
+## License
+
+MIT
+
+## Contact
+
+- Telegram: [@theantideather](https://t.me/theantideather)
+- Twitter: [@omg14doteth](https://x.com/omg14doteth) 

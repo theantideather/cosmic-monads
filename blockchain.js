@@ -18,8 +18,12 @@ class BlockchainManager {
     
     // Get the appropriate API URL based on the environment
     getApiUrl() {
+        // Check if we have a PRODUCTION_API_URL defined
+        if (window.PRODUCTION_API_URL) {
+            return window.PRODUCTION_API_URL;
+        }
         // Check if we're on Netlify production
-        if (window.location.hostname.includes('netlify.app') || 
+        else if (window.location.hostname.includes('netlify.app') || 
             !window.location.hostname.includes('localhost')) {
             // For Netlify, use relative paths which will be handled by redirects/functions
             return '/api';

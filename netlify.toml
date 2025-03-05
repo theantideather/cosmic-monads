@@ -1,12 +1,19 @@
 [build]
-  publish = "."
-  command = "echo 'No build command needed for static files'"
+  publish = "./"
+  command = ""
 
+# Redirects for API requests to the correct backend
 [[redirects]]
   from = "/api/*"
   to = "https://cosmic-monads-api.herokuapp.com/api/:splat"
   status = 200
   force = true
+
+# SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
 [functions]
   directory = "netlify/functions" 
