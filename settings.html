@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Monads - Settings</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: #fff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+        h1, h2 {
+            color: #ff00ff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #ff80ff;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #333;
+            border: 1px solid #666;
+            border-radius: 4px;
+            color: #fff;
+            font-family: monospace;
+        }
+        button {
+            background-color: #ff00ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #cc00cc;
+        }
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+        }
+        .status.error {
+            background-color: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+        }
+        .status.warning {
+            background-color: rgba(255, 255, 0, 0.2);
+            border: 1px solid #ffff00;
+        }
+        code {
+            display: block;
+            padding: 10px;
+            background-color: #222;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .info {
+            font-size: 0.9em;
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Blockchain Settings</h1>
+        
+        <div class="section">
+            <h2>Connection Status</h2>
+            <div id="connection-status" class="status warning">
+                Checking blockchain connection...
+            </div>
+            <div class="info">
+                <strong>Wallet Address:</strong> <span id="wallet-address">Not connected</span><br>
+                <strong>Network:</strong> <span id="network">Not detected</span><br>
+                <strong>Contract Address:</strong> <span id="contract-address">Not set</span>
+            </div>
+            <button id="connect-wallet-btn">Connect Wallet</button>
+            <button id="switch-network-btn">Switch to Monad Testnet</button>
+        </div>
+        
+        <div class="section">
+            <h2>Contract Settings</h2>
+            <label for="contract-address-input">Enter Contract Address:</label>
+            <input type="text" id="contract-address-input" placeholder="0x...">
+            <div class="info">
+                This should be the address of your deployed RocketGame.sol contract on Monad Testnet.
+            </div>
+            <button id="update-contract-btn">Update Contract Address</button>
+            
+            <div id="contract-status" class="status" style="display: none;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Monad Testnet Setup</h2>
+            <p>If Monad Testnet is not in your wallet, add it with these settings:</p>
+            <code>
+Network Name: Monad Testnet<br>
+RPC URL: https://rpc.testnet.monad.xyz<br>
+Chain ID: 2442<br>
+Currency Symbol: MONAD<br>
+Block Explorer URL: https://testnet.monadexplorer.com
+            </code>
+            <button id="add-network-btn">Add to Wallet</button>
+            
+            <p>Get test MONAD tokens from the faucet:</p>
+            <button id="faucet-btn">Go to Faucet</button>
+        </div>
+        
+        <div class="section">
+            <h2>Smart Contract Deployment</h2>
+            <p>To deploy the RocketGame.sol contract:</p>
+            <ol>
+                <li>Go to <a href="https://remix.ethereum.org/" target="_blank" style="color: #ff80ff;">Remix IDE</a></li>
+                <li>Create a new file called RocketGame.sol and paste the contract code</li>
+                <li>Install OpenZeppelin by clicking on "Plugin Manager", searching for "OpenZeppelin" and activating it</li>
+                <li>Compile the contract (make sure you select compiler version 0.8.0 or newer)</li>
+                <li>Deploy to Monad Testnet by connecting MetaMask and selecting "Injected Provider - MetaMask" in the deploy tab</li>
+                <li>Confirm the transaction and wait for deployment to complete</li>
+                <li>Copy the deployed contract address and paste it above</li>
+            </ol>
+        </div>
+        
+        <div class="nav-buttons">
+            <button id="back-to-game-btn">Back to Game</button>
+        </div>
+    </div>
+    
+    <!-- Load Web3.js -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.9.0/dist/web3.min.js"></script>
+    
+    <!-- Settings script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const connectionStatus = document.getElementById('connection-status');
+            const walletAddressSpan = document.getElementById('wallet-address');
+            const networkSpan = document.getElementById('network');
+            const contractAddressSpan = document.getElementById('contract-address');
+            const contractAddressInput = document.getElementById('contract-address-input');
+            const contractStatus = document.getElementById('contract-status');
+            
+            // Load blockchain.js to access the blockchainManager
+            const script = document.createElement('script');
+            script.src = 'blockchain.js';
+            document.head.appendChild(script);
+            
+            // Wait for blockchain.js to load
+            await new Promise(resolve => {
+                script.onload = resolve;
+                setTimeout(resolve, 1000); // Fallback timeout
+            });
+            
+            // Function to update UI based on connection status
+            async function updateConnectionInfo() {
+                if (!window.blockchainManager || !window.blockchainManager.web3) {
+                    connectionStatus.textContent = 'No Web3 provider detected. Please install MetaMask.';
+                    connectionStatus.className = 'status error';
+                    return;
+                }
+                
+                // Check if connected to wallet
+                const connected = await window.blockchainManager.checkConnection();
+                
+                if (connected) {
+                    const accounts = await window.blockchainManager.web3.eth.getAccounts();
+                    walletAddressSpan.textContent = accounts[0];
+                    
+                    const chainId = await window.blockchainManager.web3.eth.getChainId();
+                    
+                    if (chainId === 2442) {
+                        networkSpan.textContent = 'Monad Testnet';
+                        connectionStatus.textContent = 'Connected to Monad Testnet';
+                        connectionStatus.className = 'status success';
+                    } else {
+                        networkSpan.textContent = `Chain ID: ${chainId} (Not Monad Testnet)`;
+                        connectionStatus.textContent = 'Wrong network. Please switch to Monad Testnet.';
+                        connectionStatus.className = 'status warning';
+                    }
+                    
+                    if (window.blockchainManager.contractAddress && 
+                        window.blockchainManager.web3.utils.isAddress(window.blockchainManager.contractAddress)) {
+                        contractAddressSpan.textContent = window.blockchainManager.contractAddress;
+                        contractAddressInput.value = window.blockchainManager.contractAddress;
+                    } else {
+                        contractAddressSpan.textContent = 'Not set or invalid';
+                    }
+                } else {
+                    connectionStatus.textContent = 'Not connected to wallet';
+                    connectionStatus.className = 'status error';
+                    walletAddressSpan.textContent = 'Not connected';
+                    networkSpan.textContent = 'Not detected';
+                    
+                    const storedAddress = localStorage.getItem('rocketGameContractAddress');
+                    if (storedAddress) {
+                        contractAddressSpan.textContent = storedAddress + ' (not verified)';
+                        contractAddressInput.value = storedAddress;
+                    } else {
+                        contractAddressSpan.textContent = 'Not set';
+                    }
+                }
+            }
+            
+            // Connect wallet button
+            document.getElementById('connect-wallet-btn').addEventListener('click', async () => {
+                if (!window.ethereum) {
+                    alert('No Ethereum provider detected. Please install MetaMask or another wallet.');
+                    return;
+                }
+                
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    updateConnectionInfo();
+                } catch (error) {
+                    console.error('Error connecting wallet:', error);
+                    connectionStatus.textContent = `Connection error: ${error.message}`;
+                    connectionStatus.className = 'status error';
+                }
+            });
+            
+            // Switch network button
+            document.getElementById('switch-network-btn').addEventListener('click', async () => {
+                if (!window.ethereum) {
+                    alert('No Ethereum provider detected. Please install MetaMask or another wallet.');
+                    return;
+                }
+                
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x988' }], // 0x988 is hex for 2442
+                    });
+                    updateConnectionInfo();
+                } catch (switchError) {
+                    // This error code indicates that the chain has not been added to MetaMask
+                    if (switchError.code === 4902) {
+                        try {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [{
+                                    chainId: '0x988',
+                                    chainName: 'Monad Testnet',
+                                    nativeCurrency: {
+                                        name: 'MONAD',
+                                        symbol: 'MONAD',
+                                        decimals: 18
+                                    },
+                                    rpcUrls: ['https://rpc.testnet.monad.xyz'],
+                                    blockExplorerUrls: ['https://testnet.monadexplorer.com']
+                                }],
+                            });
+                            updateConnectionInfo();
+                        } catch (addError) {
+                            console.error('Failed to add Monad Testnet:', addError);
+                            connectionStatus.textContent = `Failed to add network: ${addError.message}`;
+                            connectionStatus.className = 'status error';
+                        }
+                    } else {
+                        console.error('Failed to switch network:', switchError);
+                        connectionStatus.textContent = `Failed to switch network: ${switchError.message}`;
+                        connectionStatus.className = 'status error';
+                    }
+                }
+            });
+            
+            // Add network button
+            document.getElementById('add-network-btn').addEventListener('click', async () => {
+                if (!window.ethereum) {
+                    alert('No Ethereum provider detected. Please install MetaMask or another wallet.');
+                    return;
+                }
+                
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0x988',
+                            chainName: 'Monad Testnet',
+                            nativeCurrency: {
+                                name: 'MONAD',
+                                symbol: 'MONAD',
+                                decimals: 18
+                            },
+                            rpcUrls: ['https://rpc.testnet.monad.xyz'],
+                            blockExplorerUrls: ['https://testnet.monadexplorer.com']
+                        }],
+                    });
+                    alert('Monad Testnet was added to your wallet!');
+                    updateConnectionInfo();
+                } catch (error) {
+                    console.error('Failed to add Monad Testnet:', error);
+                    alert(`Failed to add Monad Testnet: ${error.message}`);
+                }
+            });
+            
+            // Faucet button
+            document.getElementById('faucet-btn').addEventListener('click', () => {
+                window.open('https://faucet.testnet.monad.xyz', '_blank');
+            });
+            
+            // Update contract address button
+            document.getElementById('update-contract-btn').addEventListener('click', async () => {
+                const address = contractAddressInput.value.trim();
+                
+                if (!address) {
+                    contractStatus.textContent = 'Please enter a contract address';
+                    contractStatus.className = 'status error';
+                    contractStatus.style.display = 'block';
+                    return;
+                }
+                
+                if (!window.blockchainManager || !window.blockchainManager.web3) {
+                    contractStatus.textContent = 'Web3 not initialized. Please connect your wallet first.';
+                    contractStatus.className = 'status error';
+                    contractStatus.style.display = 'block';
+                    return;
+                }
+                
+                if (!window.blockchainManager.web3.utils.isAddress(address)) {
+                    contractStatus.textContent = 'Invalid Ethereum address format';
+                    contractStatus.className = 'status error';
+                    contractStatus.style.display = 'block';
+                    return;
+                }
+                
+                // Save to localStorage even if blockchainManager is not available
+                localStorage.setItem('rocketGameContractAddress', address);
+                
+                // Update in blockchainManager if available
+                if (window.blockchainManager) {
+                    const success = window.blockchainManager.setContractAddress(address);
+                    
+                    if (success) {
+                        contractStatus.textContent = 'Contract address updated successfully!';
+                        contractStatus.className = 'status success';
+                    } else {
+                        contractStatus.textContent = 'Failed to update contract in blockchain manager';
+                        contractStatus.className = 'status error';
+                    }
+                } else {
+                    contractStatus.textContent = 'Address saved. Please reload the game.';
+                    contractStatus.className = 'status warning';
+                }
+                
+                contractStatus.style.display = 'block';
+                contractAddressSpan.textContent = address;
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    contractStatus.style.display = 'none';
+                }, 5000);
+            });
+            
+            // Back to game button
+            document.getElementById('back-to-game-btn').addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+            
+            // Check connection status on load
+            updateConnectionInfo();
+            
+            // Listen for account and network changes
+            if (window.ethereum) {
+                window.ethereum.on('accountsChanged', updateConnectionInfo);
+                window.ethereum.on('chainChanged', updateConnectionInfo);
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,10 @@
+# Redirects for Netlify deployment
+
+# API status endpoint
+/api/status /.netlify/functions/status 200
+
+# API log-action endpoint
+/api/log-action /.netlify/functions/log-action 200
+
+# Fallback - SPA routing
+/* /index.html 200 
