@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Monads</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            z-index: 100;
+        }
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+        #game-over button {
+            background-color: #ff00ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #blockchain-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 14px;
+            z-index: 100;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        .transaction-alert {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: white;
+            font-size: 14px;
+            z-index: 100;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+            display: none;
+            animation: fadeIn 0.3s, fadeOut 0.5s 3s forwards;
+        }
+        #credits {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 14px;
+            z-index: 100;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 350px;
+            line-height: 1.5;
+        }
+        #credits a {
+            color: #ff00ff;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        #credits a:hover {
+            color: #ff66ff;
+            text-decoration: underline;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="score">Score: 0</div>
+        <div id="game-over">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <button id="restart-button">Play Again</button>
+        </div>
+        <div id="blockchain-status">Monad Transactions: <span id="transaction-count">0</span></div>
+        <div id="transaction-alert" class="transaction-alert"></div>
+        <div id="credits">
+            Created with love for my Monad G's by theantideather<br>
+            <a href="https://t.me/theantideather" target="_blank">Telegram: @theantideather</a><br>
+            <a href="https://x.com/omg14doteth?s=21" target="_blank">Twitter: @omg14doteth</a>
+        </div>
+    </div>
+
+    <!-- Load Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Load game scripts -->
+    <script src="blockchain.js"></script>
+    <script src="game.js"></script>
+    
+    <!-- Transaction notification script -->
+    <script>
+        // Function to show transaction notifications
+        window.showTransactionAlert = function(action) {
+            const alertElement = document.getElementById('transaction-alert');
+            const transactionCount = document.getElementById('transaction-count');
+            
+            // Update counter
+            const currentCount = parseInt(transactionCount.textContent) || 0;
+            transactionCount.textContent = currentCount + 1;
+            
+            // Show alert
+            alertElement.textContent = `Transaction submitted: ${action}`;
+            alertElement.style.display = 'block';
+            
+            // Auto-hide after 3.5 seconds (matching the animation duration)
+            setTimeout(() => {
+                alertElement.style.display = 'none';
+            }, 3500);
+        };
+        
+        // Modify the logAction method to show alerts
+        const originalLogAction = window.blockchainManager ? window.blockchainManager.logAction : null;
+        if (originalLogAction) {
+            window.blockchainManager.logAction = function(action) {
+                window.showTransactionAlert(action);
+                return originalLogAction.call(window.blockchainManager, action);
+            };
+        }
+    </script>
+</body>
+</html> 

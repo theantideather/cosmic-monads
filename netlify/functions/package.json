@@ -1,0 +1,9 @@
+{
+  "name": "cosmic-monads-functions",
+  "version": "1.0.0",
+  "description": "Netlify functions for Cosmic Monads game",
+  "main": "status.js",
+  "dependencies": {
+    "dotenv": "^16.4.7"
+  }
+} 

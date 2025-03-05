@@ -1,0 +1,41 @@
+# Node dependencies
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Environment variables - contains sensitive data
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build files
+dist/
+build/
+
+# Cache
+.cache/
+.netlify/
+
+# Netlify
+.netlify
+
+# Log files
+*.log
+
+# Hardhat artifacts
+artifacts/
+cache/
+typechain-types/
+
+# Blockchain generated files
+coverage/
+coverage.json 
