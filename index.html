@@ -100,6 +100,123 @@
             from { opacity: 1; }
             to { opacity: 0; }
         }
+        /* Leaderboard styles */
+        #leaderboard {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            color: white;
+            font-size: 14px;
+            z-index: 100;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 250px;
+            max-height: 300px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
+            border: 1px solid rgba(255, 0, 255, 0.2);
+        }
+        #leaderboard h3 {
+            margin-top: 0;
+            text-align: center;
+            color: #ff00ff;
+            border-bottom: 1px solid #ff00ff;
+            padding-bottom: 5px;
+        }
+        #leaderboard-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        #leaderboard-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+        }
+        #leaderboard-list .rank {
+            color: #ff00ff;
+            width: 20px;
+        }
+        #leaderboard-list .username {
+            flex-grow: 1;
+            text-align: left;
+            margin: 0 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        #leaderboard-list .score {
+            text-align: right;
+            color: #ffcc00;
+        }
+        #toggle-leaderboard {
+            position: absolute;
+            top: 20px;
+            right: 160px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 1px solid #ff00ff;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            z-index: 100;
+            transition: background-color 0.3s;
+        }
+        #toggle-leaderboard:hover {
+            background-color: rgba(255, 0, 255, 0.3);
+        }
+        .leaderboard-collapsed {
+            max-height: 40px;
+            overflow: hidden;
+            opacity: 0.7;
+        }
+        /* Username prompt styles */
+        #username-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 200;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+            display: none;
+        }
+        #username-prompt h2 {
+            margin-top: 0;
+            color: #ff00ff;
+        }
+        #username-prompt input {
+            width: 100%;
+            padding: 10px;
+            margin: 15px 0;
+            border: none;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+        #username-prompt button {
+            background-color: #ff00ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        #username-prompt button:hover {
+            background-color: #ff66ff;
+        }
     </style>
 </head>
 <body>
@@ -112,6 +229,26 @@
         </div>
         <div id="blockchain-status">Monad Transactions: <span id="transaction-count">0</span></div>
         <div id="transaction-alert" class="transaction-alert"></div>
+        
+        <!-- Leaderboard Toggle Button -->
+        <button id="toggle-leaderboard">Toggle Leaderboard</button>
+        
+        <!-- Leaderboard Section -->
+        <div id="leaderboard">
+            <h3>Top Pilots</h3>
+            <ul id="leaderboard-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
+        
+        <!-- Username Prompt -->
+        <div id="username-prompt">
+            <h2>Enter Your Callsign</h2>
+            <p>What should we call you, cosmic explorer?</p>
+            <input type="text" id="username-input" placeholder="Your callsign..." maxlength="15">
+            <button id="username-submit">Launch Mission</button>
+        </div>
+        
         <div id="credits">
             Created with love for my Monad G's by theantideather<br>
             <a href="https://t.me/theantideather" target="_blank">Telegram: @theantideather</a><br>
@@ -122,11 +259,15 @@
     <!-- Load Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
+    <!-- Load Supabase for leaderboard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <!-- Load configuration -->
     <script src="config.js"></script>
     
     <!-- Load game scripts -->
     <script src="blockchain.js"></script>
+    <script src="leaderboard.js"></script>
     <script src="game.js"></script>
     
     <!-- Transaction notification script -->

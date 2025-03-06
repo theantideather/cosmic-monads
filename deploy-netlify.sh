@@ -3,55 +3,60 @@
 # Cosmic Monads Netlify Deployment Script
 
 echo "=== Cosmic Monads Netlify Deployment ==="
-echo ""
+echo
 
-# Check if there are uncommitted changes
+# Check if Git repository has uncommitted changes
 if ! git diff-index --quiet HEAD --; then
     echo "There are uncommitted changes. Would you like to commit them? (y/n)"
-    read -r response
-    if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-        echo "Enter commit message:"
-        read -r commit_message
+    read commit_response
+    
+    if [ "$commit_response" = "y" ]; then
+        echo "Enter a commit message:"
+        read commit_message
+        
         git add .
         git commit -m "$commit_message"
-        echo "Changes committed."
+        echo "Changes committed with message: $commit_message"
     else
-        echo "Continuing without committing changes."
+        echo "Uncommitted changes will not be deployed."
+        exit 1
     fi
 fi
 
-# Check if we need to push to GitHub
-local_commit=$(git rev-parse HEAD)
-remote_commit=$(git rev-parse origin/main 2>/dev/null || echo "no-remote")
+# Check if local and remote repositories are in sync
+LOCAL_COMMIT=$(git rev-parse HEAD)
+REMOTE_COMMIT=$(git rev-parse @{u} 2>/dev/null || echo "no-remote")
 
-if [ "$local_commit" != "$remote_commit" ]; then
+if [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ] && [ "$REMOTE_COMMIT" != "no-remote" ]; then
     echo "Local and remote repositories are different. Push to GitHub? (y/n)"
-    read -r push_response
-    if [[ "$push_response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-        git push origin main
+    read push_response
+    
+    if [ "$push_response" = "y" ]; then
+        git push
         echo "Changes pushed to GitHub."
     else
-        echo "Continuing without pushing changes."
+        echo "Local changes will not be pushed to GitHub."
     fi
 fi
 
-# Update config for production (uncomment production URL)
+# Prepare configuration for production
 echo "Preparing configuration for production..."
-sed -i.bak 's/window.PRODUCTION_API_URL = isLocalhost ? null : getBaseUrl();/window.PRODUCTION_API_URL = getBaseUrl();/' config.js
 
-# Ensure we have the netlify CLI
-if ! command -v netlify &> /dev/null; then
-    echo "Installing Netlify CLI..."
-    npm install -g netlify-cli
+# Update config.js to use production settings
+cp config.js config.js.bak
+sed -i.bak 's/debugMode: true/debugMode: false/g' config.js
+sed -i.bak 's/showFPS: true/showFPS: false/g' config.js
+
+# Check Netlify login status
+echo "Checking Netlify login status..."
+if ! netlify status &>/dev/null; then
+    echo "You need to log in to Netlify."
+    netlify login
 fi
 
-# Check if we're logged in to Netlify
-echo "Checking Netlify login status..."
-netlify status
-
-# Link to existing site if not already linked
-if [ ! -d ".netlify" ]; then
-    echo "Linking to Netlify site..."
+# Check if the site is linked
+if [ ! -d .netlify ]; then
+    echo "Linking to Netlify site 'cosmicmonads'..."
     netlify link --name cosmicmonads
 fi
 
@@ -59,15 +64,15 @@ fi
 echo "Deploying to Netlify..."
 netlify deploy --prod
 
-# Restore the configuration for local development
+# Restore local development configuration
 echo "Restoring configuration for local development..."
 mv config.js.bak config.js
 
-echo ""
+echo
 echo "=== Deployment Complete ==="
-echo ""
+echo
 echo "Your game is now deployed to: https://cosmicmonads.netlify.app"
-echo ""
+echo
 echo "Important: Make sure your backend server is properly deployed and running."
 echo "See BACKEND_DEPLOYMENT.md for instructions on setting up your backend server."
-echo "" 
+echo 

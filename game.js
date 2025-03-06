@@ -41,7 +41,10 @@ class SpaceRunner {
     init() {
         // Create the scene
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x110022); // Dark purple background
+        
+        // Create a gradient background for alien sunset effect
+        const bgTexture = this.createSunsetGradient();
+        this.scene.background = bgTexture;
 
         // Create the camera
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -393,13 +396,29 @@ class SpaceRunner {
     }
 
     createMothership() {
+        // Store possible colors for the mothership
+        this.mothershipColors = [
+            { color: 0x990099, emissive: 0x330033, specular: 0x8800ff }, // Purple (default)
+            { color: 0x009999, emissive: 0x003333, specular: 0x00aaff }, // Teal
+            { color: 0x996600, emissive: 0x332200, specular: 0xffaa00 }, // Gold
+            { color: 0x660066, emissive: 0x220022, specular: 0xff00ff }, // Deep magenta
+            { color: 0x006666, emissive: 0x002222, specular: 0x00ffff }, // Cyan
+            { color: 0x990000, emissive: 0x330000, specular: 0xff0000 }, // Red
+            { color: 0x009900, emissive: 0x003300, specular: 0x00ff00 }  // Green
+        ];
+        
+        // Get a random color index that's not the current one
+        this.currentMothershipColorIndex = 0;
+        
         // Create main body
         const bodyGeometry = new THREE.SphereGeometry(4, 32, 32);
+        const colorScheme = this.mothershipColors[this.currentMothershipColorIndex];
+        
         const bodyMaterial = new THREE.MeshPhongMaterial({
-            color: 0x990099,        // Main purple color
-            emissive: 0x330033,     // Subtle purple glow
+            color: colorScheme.color,
+            emissive: colorScheme.emissive,
             shininess: 50,
-            specular: 0x8800ff      // Purple specular highlights
+            specular: colorScheme.specular
         });
         
         this.mothership = new THREE.Mesh(bodyGeometry, bodyMaterial);
@@ -420,8 +439,8 @@ class SpaceRunner {
         // Add rings around the mothership - make them larger and more impressive
         const ringGeometry = new THREE.TorusGeometry(7, 0.5, 16, 100);
         const ringMaterial = new THREE.MeshPhongMaterial({
-            color: 0xff00ff, 
-            emissive: 0x550055,
+            color: colorScheme.color, 
+            emissive: colorScheme.emissive,
             transparent: true,
             opacity: 0.7
         });
@@ -441,14 +460,14 @@ class SpaceRunner {
         this.mothership.add(ring3);
         
         // Add pulsing light
-        const pulsingLight = new THREE.PointLight(0xff00ff, 2, 30);
+        const pulsingLight = new THREE.PointLight(colorScheme.color, 2, 30);
         this.mothership.add(pulsingLight);
         this.mothershipLight = pulsingLight;
         
         // Add glow effect
         const glowGeometry = new THREE.SphereGeometry(4.5, 32, 32);
         const glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0xff00ff,
+            color: colorScheme.color,
             transparent: true,
             opacity: 0.2,
             side: THREE.BackSide
@@ -457,11 +476,43 @@ class SpaceRunner {
         const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
         this.mothership.add(glowMesh);
         
+        // Store references to materials for color changes
+        this.mothershipBodyMaterial = bodyMaterial;
+        this.mothershipRingMaterial = ringMaterial;
+        this.mothershipGlowMaterial = glowMaterial;
+        
         // Create defense turrets
         this.createMothershipTurrets();
         
         // Store damage visual effects
         this.damageEffects = [];
+    }
+
+    // Change mothership color
+    changeMothershipColor() {
+        // Select a new random color index that's different from the current one
+        let newIndex;
+        do {
+            newIndex = Math.floor(Math.random() * this.mothershipColors.length);
+        } while (newIndex === this.currentMothershipColorIndex && this.mothershipColors.length > 1);
+        
+        this.currentMothershipColorIndex = newIndex;
+        const colorScheme = this.mothershipColors[newIndex];
+        
+        // Update body material
+        this.mothershipBodyMaterial.color.setHex(colorScheme.color);
+        this.mothershipBodyMaterial.emissive.setHex(colorScheme.emissive);
+        this.mothershipBodyMaterial.specular.setHex(colorScheme.specular);
+        
+        // Update ring material
+        this.mothershipRingMaterial.color.setHex(colorScheme.color);
+        this.mothershipRingMaterial.emissive.setHex(colorScheme.emissive);
+        
+        // Update glow material
+        this.mothershipGlowMaterial.color.setHex(colorScheme.color);
+        
+        // Update light color
+        this.mothershipLight.color.setHex(colorScheme.color);
     }
 
     createMothershipTurrets() {
@@ -1004,54 +1055,76 @@ class SpaceRunner {
             }
             
             // Check for collision with mothership
-            if (missile.position.distanceTo(this.mothership.position) < 5) {
-                // Different explosion effect based on missile type
-                const explosionColor = missile.missileType === 'special' ? 0xff00ff : 0x00ffff;
-                const explosionSize = missile.missileType === 'special' ? 50 : 30;
-                this.createExplosion(missile.position.clone(), explosionColor, explosionSize);
+            if (this.mothership && this.mothership.health > 0 &&
+                missile.position.distanceTo(this.mothership.position) < 5) {
                 
-                // Remove missile
-                this.scene.remove(missile);
-                this.missiles.splice(i, 1);
-                
-                // Damage mothership - special missiles do more damage
-                const damage = missile.missileType === 'special' ? 15 : 5;
-                this.mothership.health -= damage;
-                
-                // Log hit to blockchain
-                if (window.blockchainManager) {
-                    window.blockchainManager.logAction(missile.missileType === 'special' 
-                        ? 'HitMothership_Special' 
-                        : 'HitMothership');
+                // Remove the missile
+                if (missile.missileType === 'special') {
+                    // Create larger explosion for special missiles
+                    this.createExplosion(missile.position.clone(), 0xff00ff, 50);
+                } else {
+                    // Create regular explosion
+                    this.createExplosion(missile.position.clone(), 0xff8800, 30);
                 }
                 
-                // Visual feedback of mothership taking damage
-                this.mothership.material.emissive.setHex(0xff0000);
-                setTimeout(() => {
-                    if (this.mothership) {
-                        this.mothership.material.emissive.setHex(0x330033);
-                    }
-                }, 100);
+                // Calculate damage based on missile type
+                const damage = missile.missileType === 'special' ? 25 : 10;
+                
+                // Flash the mothership red when hit
+                if (this.mothership.material) {
+                    this.mothership.material.emissive.setHex(0xff0000);
+                    setTimeout(() => {
+                        if (this.mothership && this.mothership.material) {
+                            const colorScheme = this.mothershipColors[this.currentMothershipColorIndex];
+                            this.mothership.material.emissive.setHex(colorScheme.emissive);
+                        }
+                    }, 100);
+                }
                 
                 // Mothership takes damage
+                this.mothership.health -= damage;
+                
+                // Update health bar
+                const healthPercent = this.mothership.health / this.mothership.maxHealth;
+                this.mothershipHealthBar.scale.x = Math.max(0.1, healthPercent);
+                this.mothershipHealthBar.material.color.setHex(
+                    healthPercent > 0.6 ? 0x00ff00 : (healthPercent > 0.3 ? 0xffff00 : 0xff0000)
+                );
+                
+                // Create damage particle effect
+                const damagePos = new THREE.Vector3().copy(missile.position);
+                this.createExplosion(damagePos, 0xff00ff, 15);
+                
+                // Show damage visually on the mothership
+                if (this.mothership.health <= 75 && this.mothership.health > 50) {
+                    this.showDamageOnMothership(1);
+                } else if (this.mothership.health <= 50 && this.mothership.health > 25) {
+                    this.showDamageOnMothership(2);
+                } else if (this.mothership.health <= 25 && this.mothership.health > 0) {
+                    this.showDamageOnMothership(3);
+                }
+                
                 if (this.mothership.health <= 0) {
-                    // Big explosion
-                    this.createExplosion(this.mothership.position.clone(), 0xff00ff, 100);
-                    
-                    // Reset mothership
-                    this.mothership.health = 100;
-                    this.addScore(1000);
-                    
-                    // Spawn another mothership in a different position
-                    this.mothership.position.set(
-                        Math.random() * 20 - 10,
-                        Math.random() * 10 - 5,
-                        -50
-                    );
+                    // Call our mothership destroyed handler
+                    this.handleMothershipDestroyed();
+                }
+                
+                // Log transaction to blockchain for significant events
+                if (missile.missileType === 'special' || this.mothership.health <= 0 || 
+                    (this.mothership.health / this.mothership.maxHealth) <= 0.5) {
+                    // Only log significant damage to reduce transaction volume
+                    if (window.blockchainManager) {
+                        window.blockchainManager.logAction(`DamagedMothership_Health_${Math.round(this.mothership.health)}`);
+                    }
                 }
                 
                 // Add score - more for special missiles
                 this.addScore(missile.missileType === 'special' ? 30 : 10);
+                
+                // Remove the missile
+                this.scene.remove(missile);
+                this.missiles.splice(i, 1);
+                i--;
                 continue;
             }
             
@@ -1433,7 +1506,17 @@ class SpaceRunner {
 
     addScore(points) {
         this.score += points;
+        this.updateScore();
+    }
+    
+    updateScore() {
+        // Update the score display
         this.scoreElement.textContent = `Score: ${this.score}`;
+        
+        // Update the leaderboard if available
+        if (window.leaderboardManager && window.leaderboardManager.currentUser) {
+            window.leaderboardManager.updateUserScore(this.score);
+        }
     }
 
     gameOver() {
@@ -1442,6 +1525,14 @@ class SpaceRunner {
         // Display game over screen
         this.gameOverElement.style.display = 'block';
         this.finalScoreElement.textContent = this.score;
+        
+        // Update leaderboard with final score if username exists
+        if (window.leaderboardManager && window.leaderboardManager.currentUser) {
+            window.leaderboardManager.updateUserScore(this.score);
+        } else if (window.leaderboardManager) {
+            // If no username, prompt for one now
+            window.leaderboardManager.showUsernamePrompt();
+        }
         
         // Log game over to blockchain with score
         if (window.blockchainManager) {
@@ -1468,6 +1559,12 @@ class SpaceRunner {
     }
 
     restart() {
+        // Check if we have a username before restarting
+        if (window.leaderboardManager && !window.leaderboardManager.currentUser) {
+            window.leaderboardManager.showUsernamePrompt();
+            return; // Don't restart until we have a username
+        }
+        
         // Reset game state
         this.score = 0;
         this.scoreElement.textContent = 'Score: 0';
@@ -1504,6 +1601,9 @@ class SpaceRunner {
         // Reset mothership
         this.mothership.health = 100;
         this.mothership.position.set(0, 0, -40);
+        
+        // Change the mothership color
+        this.changeMothershipColor();
         
         // Restart game
         this.gameRunning = true;
@@ -1573,9 +1673,271 @@ class SpaceRunner {
         // Render
         this.renderer.render(this.scene, this.camera);
     }
+
+    // Create sunset gradient background
+    createSunsetGradient() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 2;
+        canvas.height = 512;
+        
+        const context = canvas.getContext('2d');
+        
+        // Create gradient
+        const gradient = context.createLinearGradient(0, 0, 0, 512);
+        gradient.addColorStop(0, '#120036'); // Deep space purple
+        gradient.addColorStop(0.3, '#3b0f6b'); // Mid purple
+        gradient.addColorStop(0.6, '#cf3476'); // Pinkish-purple
+        gradient.addColorStop(0.8, '#ff6b95'); // Sunset pink
+        gradient.addColorStop(1, '#3b0f6b'); // Back to purple at the bottom
+        
+        // Fill with gradient
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, 2, 512);
+        
+        // Create texture
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        
+        return texture;
+    }
+
+    // When mothership is destroyed
+    handleMothershipDestroyed() {
+        // Add a big score boost
+        this.score += 5000;
+        this.updateScore();
+        
+        // Create a massive explosion effect
+        this.createExplosion(this.mothership.position.clone(), 0xff00ff, 150);
+        
+        // Add additional explosion effects in a sequence for dramatic effect
+        setTimeout(() => {
+            if (this.gameRunning) {
+                const offset1 = new THREE.Vector3(this.mothership.position.x + 2, this.mothership.position.y - 1, this.mothership.position.z);
+                this.createExplosion(offset1, 0xff6600, 60);
+            }
+        }, 200);
+        
+        setTimeout(() => {
+            if (this.gameRunning) {
+                const offset2 = new THREE.Vector3(this.mothership.position.x - 3, this.mothership.position.y + 2, this.mothership.position.z + 1);
+                this.createExplosion(offset2, 0xffff00, 80);
+            }
+        }, 400);
+        
+        setTimeout(() => {
+            if (this.gameRunning) {
+                const offset3 = new THREE.Vector3(this.mothership.position.x, this.mothership.position.y, this.mothership.position.z - 2);
+                this.createExplosion(offset3, 0x00ffff, 100);
+            }
+        }, 600);
+        
+        // Create a shockwave effect
+        this.createShockwave(this.mothership.position.clone());
+        
+        // Show a large on-screen message
+        this.showMothershipDestroyedMessage();
+        
+        // Log action to blockchain
+        if (window.blockchainManager) {
+            window.blockchainManager.logAction(`DestroyedMothership_Score_${this.score}`);
+        }
+        
+        // Hide the mothership briefly
+        this.mothership.visible = false;
+        
+        // Remove all damage effects
+        for (const effect of this.damageEffects) {
+            this.mothership.remove(effect.mesh);
+        }
+        this.damageEffects = [];
+        
+        // Wait a moment then respawn the mothership
+        setTimeout(() => {
+            if (this.gameRunning) {
+                // Reset mothership health and position
+                this.mothership.health = this.mothership.maxHealth;
+                const z = Math.random() * -30 - 30; // Random position between -30 and -60
+                this.mothership.position.set(0, 0, z);
+                
+                // Reset health bar
+                this.mothershipHealthBar.scale.x = 1;
+                this.mothershipHealthBar.material.color.setHex(0x00ff00);
+                
+                // Make visible again
+                this.mothership.visible = true;
+                
+                // Change mothership color
+                this.changeMothershipColor();
+            }
+        }, 2000);
+    }
+
+    // Create a shockwave effect
+    createShockwave(position) {
+        const geometry = new THREE.RingGeometry(0.1, 0.5, 32);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.7
+        });
+        
+        const ring = new THREE.Mesh(geometry, material);
+        ring.position.copy(position);
+        ring.rotation.x = Math.PI / 2; // Align with the horizontal plane
+        this.scene.add(ring);
+        
+        // Animation parameters
+        const duration = 1.5; // seconds
+        const maxScale = 30;
+        const startTime = Date.now() / 1000;
+        
+        // Add to particle groups for animation
+        this.particleGroups.push({
+            particles: [ring],
+            update: (deltaTime) => {
+                const elapsedTime = Date.now() / 1000 - startTime;
+                const progress = Math.min(elapsedTime / duration, 1);
+                
+                const scale = progress * maxScale;
+                ring.scale.set(scale, scale, scale);
+                
+                // Fade out as it expands
+                material.opacity = 0.7 * (1 - progress);
+                
+                // Remove when animation completes
+                if (progress >= 1) {
+                    this.scene.remove(ring);
+                    return true; // Signal to remove this group
+                }
+                
+                return false;
+            }
+        });
+    }
+    
+    // Show a message when mothership is destroyed
+    showMothershipDestroyedMessage() {
+        const message = document.createElement('div');
+        message.style.position = 'absolute';
+        message.style.top = '40%';
+        message.style.left = '50%';
+        message.style.transform = 'translate(-50%, -50%)';
+        message.style.color = '#ff00ff';
+        message.style.fontSize = '50px';
+        message.style.fontWeight = 'bold';
+        message.style.textShadow = '0 0 10px #ff00ff, 0 0 20px #ff00ff';
+        message.style.zIndex = '1000';
+        message.style.transition = 'opacity 0.5s';
+        message.style.textAlign = 'center';
+        message.style.pointerEvents = 'none'; // Don't interfere with gameplay
+        message.innerText = 'MOTHERSHIP DESTROYED!';
+        message.id = 'mothership-destroyed-message';
+        
+        // Add points message
+        const pointsMessage = document.createElement('div');
+        pointsMessage.style.fontSize = '30px';
+        pointsMessage.style.color = '#ffcc00';
+        pointsMessage.style.marginTop = '10px';
+        pointsMessage.innerText = '+5000 POINTS';
+        
+        message.appendChild(pointsMessage);
+        document.getElementById('game-container').appendChild(message);
+        
+        // Fade out and remove after a few seconds
+        setTimeout(() => {
+            message.style.opacity = '0';
+            setTimeout(() => {
+                const existingMessage = document.getElementById('mothership-destroyed-message');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+            }, 500);
+        }, 2500);
+    }
+
+    // Show visible damage on the mothership
+    showDamageOnMothership(damageLevel) {
+        // Check if we've already added damage effects for this level
+        if (this.damageEffects.some(effect => effect.level === damageLevel)) {
+            return;
+        }
+        
+        // Create damage geometries based on damage level
+        const damageCount = damageLevel * 2;
+        
+        for (let i = 0; i < damageCount; i++) {
+            // Create random position on mothership surface
+            const phi = Math.random() * Math.PI * 2;
+            const theta = Math.random() * Math.PI;
+            
+            const x = 4 * Math.sin(theta) * Math.cos(phi);
+            const y = 4 * Math.sin(theta) * Math.sin(phi);
+            const z = 4 * Math.cos(theta);
+            
+            // Create a "damage crater" geometry
+            const craterSize = 0.5 + Math.random() * 0.7;
+            const craterGeometry = new THREE.SphereGeometry(craterSize, 8, 8);
+            const craterMaterial = new THREE.MeshBasicMaterial({
+                color: 0x000000,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            const crater = new THREE.Mesh(craterGeometry, craterMaterial);
+            crater.position.set(x, y, z);
+            
+            // Rotate to face outward from sphere center
+            crater.lookAt(0, 0, 0);
+            
+            // Push slightly inward
+            crater.position.multiplyScalar(0.9);
+            
+            this.mothership.add(crater);
+            
+            // Add to damage effects
+            this.damageEffects.push({
+                mesh: crater,
+                level: damageLevel
+            });
+            
+            // Add glow effect at damage site
+            const glowGeometry = new THREE.SphereGeometry(craterSize * 1.2, 8, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                transparent: true,
+                opacity: 0.4,
+                side: THREE.FrontSide
+            });
+            
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.copy(crater.position);
+            glow.position.multiplyScalar(1.05);
+            this.mothership.add(glow);
+            
+            this.damageEffects.push({
+                mesh: glow,
+                level: damageLevel
+            });
+        }
+    }
 }
 
 // Start the game when the page is loaded
 window.addEventListener('load', () => {
-    new SpaceRunner();
+    // Create the game instance and make it globally accessible
+    window.spaceRunner = new SpaceRunner();
+    
+    // Wait briefly to ensure leaderboard manager is initialized
+    setTimeout(() => {
+        // If leaderboard is enabled and no username is set, pause the game and show username prompt
+        if (window.leaderboardManager && !window.leaderboardManager.currentUser) {
+            if (window.spaceRunner.gameRunning) {
+                window.spaceRunner.gameRunning = false;
+                window.leaderboardManager.showUsernamePrompt();
+            }
+        }
+    }, 500);
 }); 
